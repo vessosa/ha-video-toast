@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Build
+dist/
+build/
+*.spec
+
+# App config (contains HA token)
+.ha-video-toast/
+
+# JetBrains IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
