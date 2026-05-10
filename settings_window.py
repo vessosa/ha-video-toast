@@ -29,7 +29,9 @@ action: event.fire
 event_type: ha_video_toast
 event_data:
   camera: camera.your_camera
-  duration: 15   # optional, overrides default\
+  duration: 15   # optional — overrides default
+  width: 480     # optional — overrides default width
+  height: 295    # optional — overrides default height\
 """
 
 
@@ -91,7 +93,7 @@ class SettingsWindow:
     def _build(self):
         self.win = tk.Toplevel(self.root)
         self.win.title("HA Video Toast — Settings")
-        self.win.geometry("520x480")
+        self.win.geometry("580x540")
         self.win.resizable(False, False)
         self.win.grab_set()
         self.win.configure(bg=BG)
@@ -186,6 +188,7 @@ class SettingsWindow:
     def _build_appearance_tab(self, nb):
         f = ttk.Frame(nb)
         nb.add(f, text="  Appearance  ")
+        f.columnconfigure(0, weight=1)
 
         t = self.config.get("toast", {})
         fields = [
@@ -238,6 +241,7 @@ class SettingsWindow:
     def _build_system_tab(self, nb):
         f = ttk.Frame(nb)
         nb.add(f, text="  System  ")
+        f.columnconfigure(0, weight=1)
 
         t = self.config.get("toast", {})
         row = 0
@@ -305,7 +309,7 @@ class SettingsWindow:
         code_frame.grid(row=row, column=0, columnspan=3, padx=14, sticky=tk.EW)
 
         code_text = tk.Text(code_frame, bg=BG2, fg=ACCENT, font=("Courier New", 9),
-                            relief="flat", bd=6, height=6, width=52,
+                            relief="flat", bd=6, height=9, width=52,
                             state="disabled", cursor="arrow",
                             selectbackground=SURFACE, selectforeground=FG)
         code_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

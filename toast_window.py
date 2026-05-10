@@ -30,7 +30,7 @@ COUNTDOWN_INTERVAL = 100
 
 class ToastWindow:
     def __init__(self, root, camera_entity, stream_url, auth_headers, config, on_close,
-                 duration_override=None):
+                 duration_override=None, width_override=None, height_override=None):
         self.root          = root
         self.camera_entity = camera_entity
         self.stream_url    = stream_url
@@ -41,6 +41,10 @@ class ToastWindow:
         tcfg = config["toast"]
         self.duration  = duration_override if duration_override is not None else tcfg["duration"]
         self.remaining = float(self.duration)
+
+        # Per-event size overrides fall back to config defaults
+        self._width  = int(width_override)  if width_override  is not None else tcfg["width"]
+        self._height = int(height_override) if height_override is not None else tcfg["height"]
 
         self._frame_queue = queue.Queue(maxsize=2)
         self._running     = True
@@ -62,9 +66,8 @@ class ToastWindow:
     # ── Build UI ──────────────────────────────────────────────────────────────
 
     def _build(self):
-        tcfg    = self.config["toast"]
-        w       = tcfg["width"]
-        h       = tcfg["height"]
+        w       = self._width
+        h       = self._height
         total_h = h + HEADER_H + PROGRESS_H
 
         self.win = tk.Toplevel(self.root)
@@ -105,7 +108,7 @@ class ToastWindow:
         close = tk.Label(header, text=" × ", bg=BG, fg=FG3,
                          font=("Segoe UI", 13), cursor="hand2")
         close.pack(side=tk.RIGHT, padx=(0, 4))
-        close.bind("<Button-1>", lambda _: self.close())
+        close.bind("<Button-1>", lambda e: (self.close(), "break")[1])
         close.bind("<Enter>",    lambda _: close.config(fg=FG))
         close.bind("<Leave>",    lambda _: close.config(fg=FG3))
 
@@ -144,8 +147,7 @@ class ToastWindow:
         threading.Thread(target=self._pull_frames, daemon=True).start()
 
     def _pull_frames(self):
-        tcfg = self.config["toast"]
-        target_w, target_h = tcfg["width"], tcfg["height"]
+        target_w, target_h = self._width, self._height
         try:
             resp = _get_stream(self.stream_url, self.auth_headers)
             buf  = b""
@@ -195,8 +197,7 @@ class ToastWindow:
             return
         self.remaining = max(0.0, self.remaining - COUNTDOWN_INTERVAL / 1000)
         frac = self.remaining / self.duration
-        w = self.config["toast"]["width"]
-        self._prog_canvas.coords(self._prog_rect, 0, 0, int(w * frac), PROGRESS_H)
+        self._prog_canvas.coords(self._prog_rect, 0, 0, int(self._width * frac), PROGRESS_H)
         if self.remaining <= 0:
             self.close()
         else:
@@ -299,7 +300,7 @@ class ToastWindow:
             except Exception:
                 pass
         self._after_ids.clear()
-        self._fade_out(self.win.attributes("-alpha"))
+        self._fade_out(float(self.win.attributes("-alpha")))
 
     def _destroy(self):
         try:

@@ -127,8 +127,12 @@ action: event.fire
 event_type: ha_video_toast
 event_data:
   camera: camera.your_camera      # HA camera entity ID
-  duration: 15                    # optional — overrides the default duration
+  duration: 15                    # optional — overrides default duration
+  width: 480                      # optional — overrides default toast width
+  height: 295                     # optional — overrides default toast height
 ```
+
+All fields except `camera` are optional. When omitted, configured defaults are used. This lets different cameras use different sizes — useful for cameras with different native aspect ratios.
 
 **Example — Frigate person detection:**
 
@@ -144,6 +148,8 @@ action:
     event_data:
       camera: camera.doorbell
       duration: 20
+      width: 480     # optional — set for cameras with non-standard aspect ratio
+      height: 295    # optional
 ```
 
 ---
