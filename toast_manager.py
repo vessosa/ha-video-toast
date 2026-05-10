@@ -23,6 +23,8 @@ class ToastManager:
             return
 
         duration = event_data.get("duration", tcfg["duration"])
+        width    = event_data.get("width",    None)
+        height   = event_data.get("height",   None)
 
         # Same camera already showing → reset its timer
         for t in self._toasts:
@@ -35,9 +37,9 @@ class ToastManager:
         if len(self._toasts) >= max_toasts:
             self._toasts[0].close()
 
-        self._open(camera, duration)
+        self._open(camera, duration, width, height)
 
-    def _open(self, camera_entity, duration):
+    def _open(self, camera_entity, duration, width=None, height=None):
         toast = ToastWindow(
             self.root,
             camera_entity,
@@ -46,10 +48,12 @@ class ToastManager:
             self.config,
             on_close=self._on_close,
             duration_override=duration,
+            width_override=width,
+            height_override=height,
         )
         self._toasts.append(toast)
         idx = len(self._toasts) - 1
-        toast.move_to(self._slot_x(idx), self._slot_y())
+        toast.move_to(self._slot_x(idx), self._slot_y(toast))
 
     def _on_close(self, toast):
         if toast in self._toasts:
@@ -77,20 +81,24 @@ class ToastManager:
         return _M()
 
     def _slot_x(self, slot):
+        """Use the actual width of the toast at that slot (may differ per event override)."""
         tcfg   = self.config["toast"]
         m      = self._monitor()
         corner = tcfg.get("corner", "bottom-right")
-        step   = tcfg["width"] + tcfg["gap"]
+        # Width of toast at this slot (use its own _width if available, else config)
+        t_width = self._toasts[slot]._width if slot < len(self._toasts) else tcfg["width"]
+        step    = t_width + tcfg["gap"]
         if "right" in corner:
-            return m.x + m.width - tcfg["margin"] - tcfg["width"] - slot * step
+            return m.x + m.width - tcfg["margin"] - t_width - slot * step
         else:
             return m.x + tcfg["margin"] + slot * step
 
-    def _slot_y(self):
+    def _slot_y(self, toast=None):
         tcfg    = self.config["toast"]
         m       = self._monitor()
         corner  = tcfg.get("corner", "bottom-right")
-        total_h = tcfg["height"] + HEADER_H + PROGRESS_H
+        h       = toast._height if toast else tcfg["height"]
+        total_h = h + HEADER_H + PROGRESS_H
         if "bottom" in corner:
             return m.y + m.height - tcfg["taskbar_height"] - tcfg["margin"] - total_h
         else:
