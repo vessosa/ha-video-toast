@@ -2,6 +2,8 @@
 
 Desktop toast notifications with live camera feeds from [Home Assistant](https://www.home-assistant.io/), triggered by HA automations. No RTSP configuration required — the app connects directly to HA and streams video through its built-in camera proxy.
 
+Looking for the Android TV / Google TV version? Use [HA Video Toast TV](https://github.com/vessosa/ha-video-toast-tv), built for sideloading on Android TV devices.
+
 ![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) [![Donate](https://img.shields.io/badge/donate-PayPal-00457C?logo=paypal)](https://paypal.me/vessosa)
 
 ---
@@ -25,6 +27,7 @@ Desktop toast notifications with live camera feeds from [Home Assistant](https:/
 - [Configuration](#configuration)
 - [Building a Standalone Executable](#building-a-standalone-executable-windows)
 - [Starting with Windows](#starting-with-windows)
+- [Related Projects](#related-projects)
 - [Contributing](#contributing)
 - [License](#license)
 - [Author](#author)
@@ -196,13 +199,20 @@ pyinstaller --onefile --windowed --name ha-video-toast --icon icon.ico main.py
 
 **Option A — Settings window (recommended):**  
 Settings → System → check **Start with Windows**.  
-This writes a `.bat` file to your Windows Startup folder that launches the app using the current Python interpreter (venv-aware).
+This creates a per-user Windows startup entry. When running from source, it uses `pythonw.exe` when available so no terminal window stays open.
 
 **Option B — Compiled exe:**  
 Copy `dist\ha-video-toast.exe` to:
 ```
 %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
 ```
+
+---
+
+## Related Projects
+
+- [HA Video Toast TV](https://github.com/vessosa/ha-video-toast-tv) - Android TV / Google TV version for sideloading, with overlay camera toasts triggered by the same Home Assistant `ha_video_toast` event.
+- [HA Video Toast](https://github.com/vessosa/ha-video-toast) - This Python desktop app for PC/computer use, with Windows tray integration, settings UI, multi-monitor support, and live Home Assistant camera toasts.
 
 ---
 

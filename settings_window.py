@@ -285,7 +285,7 @@ class SettingsWindow:
             startup_cb.state(["disabled"])
         ttk.Label(
             f,
-            text="Adds a startup entry that runs:  python main.py  with this Python interpreter.",
+            text="Adds a Windows startup entry using this Python interpreter.",
             style="Dim.TLabel",
         ).grid(row=row + 1, column=0, columnspan=3, padx=(28, 14), sticky=tk.W)
         row += 2
@@ -336,23 +336,68 @@ class SettingsWindow:
             "Microsoft", "Windows", "Start Menu", "Programs", "Startup",
         )
         bat_path = os.path.join(startup_dir, "ha-video-toast.bat")
+        vbs_path = os.path.join(startup_dir, "ha-video-toast.vbs")
         try:
             if enabled:
-                python_exe = sys.executable
-                script = os.path.abspath(sys.argv[0])
-                script_dir = os.path.dirname(script)
-                with open(bat_path, "w") as fh:
-                    fh.write(
-                        f'@echo off\n'
-                        f'cd /D "{script_dir}"\n'
-                        f'start "" /B "{python_exe}" "{script}"\n'
-                    )
+                self._set_windows_run_entry(self._startup_command())
+                self._remove_startup_file(bat_path)
+                self._remove_startup_file(vbs_path)
             else:
-                if os.path.exists(bat_path):
-                    os.remove(bat_path)
+                self._remove_windows_run_entry()
+                self._remove_startup_file(bat_path)
+                self._remove_startup_file(vbs_path)
         except Exception as e:
             messagebox.showerror("Startup", f"Could not update startup entry:\n{e}",
                                  parent=self.win)
+
+    def _startup_command(self):
+        if getattr(sys, "frozen", False):
+            return f'"{os.path.abspath(sys.executable)}"'
+
+        python_exe = self._windows_gui_python_exe()
+        script = os.path.abspath(sys.argv[0])
+        return f'"{python_exe}" "{script}"'
+
+    def _windows_gui_python_exe(self):
+        python_exe = sys.executable
+        if getattr(sys, "frozen", False):
+            return python_exe
+
+        exe_dir = os.path.dirname(python_exe)
+        pythonw_exe = os.path.join(exe_dir, "pythonw.exe")
+        if os.path.exists(pythonw_exe):
+            return pythonw_exe
+        return python_exe
+
+    @staticmethod
+    def _set_windows_run_entry(command):
+        import winreg
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_SET_VALUE,
+        ) as key:
+            winreg.SetValueEx(key, "HA Video Toast", 0, winreg.REG_SZ, command)
+
+    @staticmethod
+    def _remove_windows_run_entry():
+        import winreg
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_SET_VALUE,
+            ) as key:
+                winreg.DeleteValue(key, "HA Video Toast")
+        except FileNotFoundError:
+            pass
+
+    @staticmethod
+    def _remove_startup_file(path):
+        if os.path.exists(path):
+            os.remove(path)
 
     # ------------------------------------------------------------------
     # About tab
@@ -456,6 +501,7 @@ class SettingsWindow:
         t["monitor_index"] = self._monitor_combo.current()
         t["corner"] = self._corner_var.get()
 
+        self._apply_startup()
         self._detect_taskbar_height()
 
         cfg_module.save(self.config)
